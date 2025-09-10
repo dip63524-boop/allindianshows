@@ -1,0 +1,104 @@
+<meta name='viewport' content='width=device-width, initial-scale=1'/><!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>TV Shows Mini App</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+  body { font-family: Arial; margin: 0; padding: 0; }
+  header { display: flex; justify-content: space-between; align-items: center; padding: 10px 20px; background: #222; color: #fff; }
+  nav { display: flex; justify-content: center; margin: 10px 0; }
+  nav button { padding: 10px 20px; margin: 0 5px; cursor: pointer; }
+  section { padding: 20px; display: none; }
+  section.active { display: block; }
+  button.video-btn, button.earn-btn { padding: 10px 20px; margin: 5px 0; cursor: pointer; width: 100%; font-size: 16px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div>TV Shows</div>
+  <div id="credit-display">Credits: 0</div>
+</header>
+
+<nav>
+  <button id="shows-tab">Shows</button>
+  <button id="earn-tab">Earn Credit</button>
+</nav>
+
+<!-- Shows Section -->
+<section id="shows-section" class="active">
+  <p>Loading videos...</p>
+</section>
+
+<!-- Earn Credit Section -->
+<section id="earn-section">
+  <button class="earn-btn">Watch Ad & Earn 1 Credit</button>
+</section>
+
+<script>
+const tg = window.Telegram.WebApp;
+tg.expand();
+
+// Initial credits
+let credits = 0;
+
+// Update top-right credit display
+function updateCreditsDisplay() {
+    document.getElementById('credit-display').innerText = `Credits: ${credits}`;
+}
+
+// Tab switching
+document.getElementById('shows-tab').addEventListener('click', () => {
+    document.getElementById('shows-section').classList.add('active');
+    document.getElementById('earn-section').classList.remove('active');
+});
+document.getElementById('earn-tab').addEventListener('click', () => {
+    document.getElementById('earn-section').classList.add('active');
+    document.getElementById('shows-section').classList.remove('active');
+});
+
+// Function to open video link
+function openVideo(link) {
+    if (credits >= 5) {
+        credits -= 5;
+        updateCreditsDisplay();
+        tg.sendData(JSON.stringify({action: "spent", credits: 5}));
+        window.location.href = link;
+    } else {
+        alert("You need 5 credits to unlock this video. Go to 'Earn Credit' tab.");
+    }
+}
+
+// Load videos dynamically from JSON
+fetch('videos.json')
+  .then(response => response.json())
+  .then(data => {
+      const showsSection = document.getElementById("shows-section");
+      showsSection.innerHTML = ""; // Clear loading text
+      data.forEach(video => {
+          const btn = document.createElement("button");
+          btn.className = "video-btn";
+          btn.textContent = video.name;
+          btn.addEventListener("click", () => openVideo(video.link));
+          showsSection.appendChild(btn);
+      });
+  })
+  .catch(err => {
+      document.getElementById("shows-section").innerHTML = "Failed to load videos.";
+      console.error(err);
+  });
+
+// Earn credit button (replace alert with Monetag ad integration later)
+document.querySelector('.earn-btn').addEventListener('click', () => {
+    alert("Ad finished! You earned 1 credit."); // Placeholder for Monetag
+    credits += 1;
+    updateCreditsDisplay();
+    tg.sendData(JSON.stringify({action: "earned", credits: 1}));
+});
+
+updateCreditsDisplay();
+</script>
+
+</body>
+</html>
